@@ -179,7 +179,7 @@
                 <li class="{{ ($defaultPage ?? '') === 'profile' ? 'active' : '' }}">
                     <a href="{{ route('cabinet.profile', ['theme' => $theme]) }}">
                         <img src="{{ asset("themes/$theme/images/user.svg") }}" class="icon-img" alt="User">
-                        Профіль дилера 534534
+                        Профіль дилера
                     </a>
                 </li>
                 <li class="{{ ($defaultPage ?? '') === 'dashboard' ? 'active' : '' }}">
