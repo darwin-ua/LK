@@ -1,0 +1,472 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+
+}
+html, body {
+  height: 100%;
+  background: #F5F5F5;
+}
+
+/* если нужно перекрасить и колонки */
+.left-column,
+.right-column {
+  background: #F5F5F5;
+}
+/* ===== Общий контейнер ===== */
+.layout {
+  display: flex;
+  max-height: 100vh;
+}
+
+/* Левая колонка */
+.left-column {
+  height: 100vh;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  background-color: #F5F5F5;
+}
+
+/* Правая колонка */
+.right-column {
+  flex: 1.5;
+  background: #F5F5F5;
+  padding: 24px 24px 24px 0;
+  position: relative;
+
+}
+
+/* ===== Форма ===== */
+.form-box {
+  max-width: 528px;
+  max-height: 100vh;
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 48px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.form-box.Sign-in{
+}
+.form-box.Verify-Email{
+  display: none;
+
+}
+.form-box.New-Password{
+  display: none;
+
+}
+.form-box.Successfully-changed{
+  display: none;
+}
+
+/* Логотип */
+.logo img {
+  display: block;
+  max-width: 242px;
+  margin: 0 auto 24px auto;
+}
+
+/* Заголовки */
+.form-title {
+  text-align: center;
+  font-size: 40px;
+  font-weight: 400;
+  margin: 0 0 8px 0;
+  color: #101413;
+}
+.form-subtitle {
+  text-align: center;
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #454545;
+}
+.form-subtitle {
+  text-align: center;
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  font-weight: 400;
+  color: #454545;
+}
+
+/* Поля */
+.field {
+  margin-bottom: 24px;
+}
+.field label {
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Ввод */
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  padding: 12px;
+}
+.input-wrapper input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 16px;
+  font-weight: 400;
+}
+.input-wrapper .icon-left {
+  width: 20px;
+  height: 20px;
+  margin-right: 12px;
+}
+.icon-right{
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+}
+.input-wrapper .icon-right img {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Контейнер */
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #101413;
+}
+
+/* Сбрасываем дефолт */
+.remember input[type="checkbox"] {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #ccc;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  position: relative;
+}
+
+/* Наведение */
+.remember input[type="checkbox"]:hover {
+  border-color: #005AA6;
+}
+
+/* Активный (галочка через псевдоэлемент) */
+.remember input[type="checkbox"]:checked {
+  border-color: #005AA6;
+}
+
+.remember input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0px;
+  width: 4px;
+  height: 8px;
+  border: solid #005AA6;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+
+/* Забыл пароль */
+.forgot-link {
+  display: inline-block;
+  font-size: 16px;
+  font-weight: 400;
+  margin-bottom: 24px;
+  text-align: left;
+  color: #454545;
+  text-decoration: none; /* убираем стандартное подчеркивание */
+  transition: border-color 0.2s;
+  border-bottom: 1px solid transparent; /* невидимое подчёркивание */
+}
+
+.forgot-link:hover {
+  border-bottom: 1px solid #454545; /* появляется подчёркивание */
+}
+.forgot-link.Verify-Email{
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+.forgot-link.New-Password{
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+/* Кнопка */
+.btn {
+  display: block;
+  width: 100%;
+  padding: 13px;
+  background: #005AA6;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+
+}
+.btn:hover {
+  background: #005AA6;
+}
+
+/* Партнер */
+.partner img {
+  display: block;
+  max-width: 80px;
+  margin: 24px auto 0 auto;
+}
+
+
+
+.slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+}
+
+.slide{
+  flex: 1 0 100%;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: #fff;
+  padding: 32px;
+}
+.slide.one {
+    background-image: url('../images/slide1.jpg');
+}
+
+.slide.two {
+    background-image: url('../images/slide2.jpg');
+}
+
+.slide.three {
+    background-image: url('../images/slide3.jpg');
+}
+
+.slide.Successfully-changed,
+.slide.New-Password,
+.slide.Verify-Email {
+    display: none;
+    background-image: url('../images/sky.jpg');
+}
+
+
+.slide-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  gap: 12px;
+}
+
+.slide-content h2 {
+  max-width: 500px;
+  font-size: 40px;
+  font-weight: 400;
+}
+
+.slide-content p {
+  max-width: 500px;
+  font-size: 16px;
+  font-weight: 400;
+  margin: 0;
+}
+
+
+.slider-dots {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.slider-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFFFFF4D;
+  cursor: pointer;
+}
+
+.slider-dots .dot.active {
+  background: #FFFFFF;
+}
+
+/* Контейнер иконки */
+.logo-check-circle {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* Сама иконка */
+.logo-check-circle img {
+  width: 48px;
+  height: 48px;
+}
+
+/* Прижимаем картинку вниз */
+.img-arrow {
+  height: 20px;
+  width: auto;
+  margin-right: 4px;
+  margin-bottom: -4px;
+}
+
+
+/* ===== Адаптив ===== */
+@media (max-width: 1200px) {
+  .img-arrow {
+    height: 15px;
+  }
+}
+
+@media (max-width: 992px) {
+  .img-arrow {
+    height: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  .img-arrow {
+    height: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .img-arrow {
+    height: 12px;
+  }
+}
+
+
+/* Для мобильных экранов (например до 768px) */
+@media (max-width: 768px) {
+
+  .right-column {
+    display: none;
+  }
+
+  .left-column {
+    flex: 1 1 100%;
+    height: 100vh;
+  }
+
+}
+
+
+/* ===== Адаптив ===== */
+@media (max-width: 1300px) {
+  .form-box {
+    max-width: 460px;
+    padding: 40px;
+  }
+  .form-title {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 992px) {
+  .left-column {
+    padding: 30px;
+  }
+  .form-box {
+    max-width: 400px;
+    padding: 36px;
+  }
+  .form-title {
+    font-size: 28px;
+  }
+  .form-subtitle {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 768px) {
+  .left-column {
+    padding: 20px;
+  }
+  .form-box {
+    max-width: 100%;
+    padding: 28px;
+  }
+  .form-title {
+    font-size: 24px;
+  }
+  .form-subtitle {
+    font-size: 14px;
+  }
+  .btn {
+    font-size: 15px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo img {
+    max-width: 160px;
+    margin-bottom: 16px;
+  }
+  .form-title {
+    font-size: 20px;
+  }
+  .form-subtitle {
+    font-size: 13px;
+  }
+  .partner img {
+    max-width: 60px;
+  }
+}
+
+/* ===== Адаптив ===== */
+@media (max-width: 992px) {
+  .logo-check-circle img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 768px) {
+  .logo-check-circle img {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-check-circle img {
+    width: 32px;
+    height: 32px;
+  }
+}
