@@ -177,7 +177,7 @@ class FinancesController extends Controller
             'debt'         => $debt,
             'overpayment'  => $overpayment,
 
-            // ⬇️ ВАЖНО
+
             'currentRange' => $currentRange,
         ]);
     }
