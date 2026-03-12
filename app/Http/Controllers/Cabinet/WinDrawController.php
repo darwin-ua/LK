@@ -17,9 +17,9 @@ class WinDrawController extends Controller
 
         if ($user && $user->group) {
             if ($user->group === 'Дилери: Дарвін') {
-                $windrawUrl = 'https://rds.gwd.goodwin.ua/RDWeb/webclient/';
+                $windrawUrl = 'https://localhost';
             } elseif ($user->group === 'Дилери: Гудвін') {
-                $windrawUrl = 'http://localhost';
+                $windrawUrl = 'https://rds.gwd.goodwin.ua/RDWeb/webclient/';
             }
         }
 

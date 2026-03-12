@@ -12,13 +12,20 @@ use App\Models\UserData;
 
 class AdminUsersController extends Controller
 {
+
     public function index()
     {
+
+
         $admins = User::where('role_id', 1)->get();
         $users = User::all();
         $currentAdmin = auth()->user();
 
-        return view('admin.users.index', compact('admins','currentAdmin','users'));
+        // Получаем события с основными данными
+        $events = Event::where('user_id', $currentAdmin->id)
+            ->get(['id', 'title as title', 'start_date as start', 'end_date as end']);
+
+        return view('admin.users.index', compact('admins','currentAdmin','users','events'));
     }
 
     public function storeData(Request $request)
@@ -26,15 +33,16 @@ class AdminUsersController extends Controller
         // Валидация данных
         $validated = $request->validate([
             'settings' => 'required|string',
+            // Добавьте другие поля, если необходимо
         ]);
-
         // Сохранение данных
         $userData = new UserData();
-        $userData->user_id = $request->user_id;
-        $userData->email = Auth::user()->email;
+        $userData->user_id = $request->user_id; // или другой ID пользователя
+        $userData->email = Auth::user()->email; // Пример получения email текущего пользователя
         $userData->settings = $request->settings;
         $userData->save();
 
+        // Перенаправление с сообщением об успехе
         return back()->with('success', 'Данные успешно сохранены.');
     }
 
@@ -43,54 +51,67 @@ class AdminUsersController extends Controller
         $user = Auth::user();
         $currentAdmin = auth()->user();
 
-        if ($user->role_id == 1) {
-            $alertCount = Alert::where('user_id', $user->id)
-                ->where('status', 1)
+            $alertCount =  Alert::where('user_id', $user->id)
                 ->orderBy('id', 'DESC')
                 ->paginate(10000);
-        }
 
         $admins = User::where('role_id', 1)->get();
+        // Получаем события с основными данными
+        $events = Event::where('user_id', $currentAdmin->id)
+            ->get(['id', 'title as title', 'start_date as start', 'end_date as end']);
 
-        return view('admin.users.statistic', compact('admins', 'currentAdmin', 'alertCount'));
+        return view('admin.users.statistic', compact('admins', 'currentAdmin','alertCount','events'));
     }
+
+    public function updateAlertStatus(Request $request)
+    {
+        $alert = Alert::find($request->id);
+
+        if ($alert) {
+            $alert->status = 1; // Установить "прочитано" (или другое значение)
+            $alert->save();
+
+            return response()->json(['success' => true]);
+        }
+
+        return response()->json(['success' => false], 404);
+    }
+
 
     public function create()
     {
         $currentAdmin = auth()->user();
-        $admins = User::where('role_id', 0)->get();
+        $admins = User::where('role_id', 1)->get();
         $users = User::all();
-        $roles = Role::all(); // Получаем список ролей для формы
 
-        return view('admin.users.create', compact('admins', 'currentAdmin', 'users', 'roles'));
+        return view('admin.users.create',compact('admins','currentAdmin','users'));
     }
-
-    public function registerNewUser(Request $request)
+    public function store(Request $request)
     {
-        // Проверка, что пользователь имеет право регистрировать новых пользователей
-        if (Auth::user()->role_id != 1) {
-            return redirect()->route('admin.users.index')->with('error', 'У вас нет прав для создания пользователей.');
-        }
-
-        // Валидация данных
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'required|numeric',
-            'password' => 'required|string|min:8|confirmed',
-            'role_id' => 'required|integer|exists:roles,id',
+            'title' => 'required|string|max:255',
+            'foto_title' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        // Создание нового пользователя
-        $newUser = new User();
-        $newUser->name = $request->input('name');
-        $newUser->email = $request->input('email');
-        $newUser->phone = $request->input('phone');
-        $newUser->password = bcrypt($request->input('password')); // Хешируем пароль
-        $newUser->role_id = $request->input('role_id');
-        $newUser->save();
 
-        return redirect()->route('admin.users.index')->with('success', 'Новый пользователь успешно зарегистрирован.');
+        if ($request->hasFile('foto_title')) {
+            $fotoTitle = $request->file('foto_title');
+            $userId = Auth::id();
+            $uniqueFilename = $userId . '_' . time() . '_' . $fotoTitle->getClientOriginalName();
+            $fotoTitle->storeAs('public/files/' . $userId, $uniqueFilename);
+            $request->merge(['foto_title' => $uniqueFilename]);
+        }
+
+        $user = Auth::user();
+        if ($user) {
+            $user = new User();
+            $user->user_id = $user->id;
+            $user->fill($request->all());
+            $user->save();
+            return redirect()->route('admin.users.all')->with('success', 'Event created successfully');
+        } else {
+            return redirect()->route('login');
+        }
     }
 
     public function redact($id)
@@ -98,10 +119,12 @@ class AdminUsersController extends Controller
         $currentAdmin = auth()->user();
         $admins = User::where('role_id', 1)->get();
 
+        // Получаем записи из users_data для пользователя
         $userDataRecords = UserData::where('user_id', $id)->get();
 
         return view('admin.users.edit', compact('admins', 'currentAdmin', 'userDataRecords'));
     }
+
 
     public function show($id)
     {
@@ -120,7 +143,19 @@ class AdminUsersController extends Controller
         $user->save();
 
         return redirect()->route('admin.users.edit', ['user' => $user->id])->with('success', 'Событие успешно обновлено');
+
     }
+
+//    public function destroy(User $user)
+//    {
+//        if (!$user) {
+//            return abort(404);
+//        }
+//
+//        $user->delete();
+//
+//        return redirect()->route('admin.users.index')->with('success', 'User deleted successfully');
+//    }
 
     public function destroyUserData($userDataId)
     {
@@ -129,4 +164,7 @@ class AdminUsersController extends Controller
 
         return back()->with('success', 'Данные пользователя успешно удалены.');
     }
+
+
 }
+

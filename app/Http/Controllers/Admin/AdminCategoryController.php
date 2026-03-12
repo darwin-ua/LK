@@ -11,27 +11,21 @@ class AdminCategoryController extends Controller
 {
     public function fetchSubcategory(Request $request)
     {
-        // Проверка заголовка Referer
-        $referer = $request->headers->get('referer');
-        $origin = $request->headers->get('origin');
-
-        // Определите URL вашего сайта
-        $allowedReferer = config('app.url');
-
-        // Проверяем, что запрос пришел с вашего сайта (Referer или Origin должен быть равен вашему URL)
-        if (!$referer || !$origin || !str_contains($referer, $allowedReferer) || !str_contains($origin, $allowedReferer)) {
-            return response()->json(['error' => 'Unauthorized request'], 403);
-        }
-
+        // Получаем данные из запроса
         $categoryId = $request->input('categoryId');
         $id = $request->input('id');
 
+        // Загружаем подкатегории
         $subcategories = Subcategory::where('category_id', $categoryId)
             ->where('category_sub_id', $id)
             ->get();
 
-        return view('admin.events.subcategory.category_sub_courses', ['subcategories' => $subcategories])->render();
+        // Возвращаем отрендеренный HTML-фрагмент
+        return view('admin.events.subcategory.category_sub_courses', [
+            'subcategories' => $subcategories
+        ])->render();
     }
+
 
     public function getCategoryView($category)
     {

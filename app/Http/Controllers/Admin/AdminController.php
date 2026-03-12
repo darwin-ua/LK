@@ -11,434 +11,187 @@ use Carbon\Carbon;
 use App\Models\Statistic;
 use Illuminate\Support\Facades\DB;
 use App\Models\Alert;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Redis;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Storage;
-
 
 class AdminController extends Controller
 {
 
-    public function summaryData($clientName = null, $groupName = null)
-    {
-        if (!$clientName || !$groupName) {
-            $currentUser = auth()->user();
-            $clientName = $currentUser->name;
-            $groupParts = explode(':', str_replace(' ', '', $currentUser->group));
-            $groupName = $groupParts[1] ?? '';
-        }
-
-        $summary = [
-            'overpay' => 0,
-            'debt' => 0,
-            'delivered' => 0,
-            'unallocated' => 0,
-        ];
-
-        try {
-            $summaryResponse = Http::withBasicAuth('КучеренкоД', 'NitraPa$$@0@!')
-                ->acceptJson()
-                ->timeout(10)
-                ->post('http://185.112.41.230/darvin_test/hs/lk/summaryData', [
-                    'client' => $clientName,
-                    'organiz' => $groupName,
-                ]);
-
-            $raw = $summaryResponse->body();
-            Log::info('Сырой ответ от summaryData:', ['body' => $raw]);
-
-            if ($summaryResponse->successful()) {
-                $decoded = json_decode($raw, true);
-
-                if ($decoded === null) {
-                    Log::error('Ошибка при первом json_decode: ' . json_last_error_msg());
-                    return $summary;
-                }
-
-                // Если ответ вложенный — достаём поле 'body'
-                if (isset($decoded['body']) && is_string($decoded['body'])) {
-                    $inner = $decoded['body'];
-
-                    // Удаляем неразрывные пробелы и всё подобное
-                    $inner = str_replace(["\u{A0}", "\xC2\xA0", "\xc2\xa0", "\xa0", "\u00A0"], ' ', $inner);
-                    $inner = preg_replace('/\x{00A0}/u', ' ', $inner);
-
-                    Log::info('Очищенное тело перед decode body:', ['cleanBody' => $inner]);
-
-                    $summaryData = json_decode($inner, true);
-
-                    if (json_last_error() !== JSON_ERROR_NONE) {
-                        Log::error('Ошибка декодирования JSON из поля body: ' . json_last_error_msg(), ['cleanBody' => $inner]);
-                        return $summary;
-                    }
-                } else {
-                    $summaryData = $decoded;
-                }
-
-                // Основная проверка и обработка
-                if ($summaryData && $summaryData['status'] === 'ok') {
-                    foreach (['overpay', 'debt', 'delivered', 'unallocated'] as $key) {
-                        $rawValue = $summaryData[$key] ?? '0';
-                        $cleaned = preg_replace('/[^\d,.-]/u', '', $rawValue);
-                        $summary[$key] = (float) str_replace(',', '.', $cleaned);
-                    }
-                } else {
-                    Log::warning('Некорректный ответ summaryData после парсинга: ' . json_encode($summaryData));
-                }
-
-            } else {
-                Log::error('Ошибка получения summaryData: HTTP ' . $summaryResponse->status());
-            }
-
-        } catch (\Throwable $e) {
-            Log::error('Исключение при запросе summaryData: ' . $e->getMessage());
-        }
-
-        return $summary;
-    }
-
-    private function fetchOrders($clientName, $groupName): array
-    {
-        $cacheKey = "orders_{$clientName}_{$groupName}";
-        $refresh = request()->has('refresh');
-
-        $orders = Cache::get($cacheKey);
-
-        if ($refresh || !$orders) {
-            try {
-                $response = Http::withBasicAuth('КучеренкоД', 'NitraPa$$@0@!')
-                    ->acceptJson()
-                    ->timeout(30)
-                    ->post('http://185.112.41.230/prod/hs/lk/DataOrders', [
-                        'client' => $clientName,
-                        'organiz' => $groupName,
-                    ]);
-
-                if ($response->successful()) {
-                    $responseBody = preg_replace('/[\x{A0}\s]+/u', ' ', $response->body());
-                    preg_match_all('/"(.*?)"/', $responseBody, $matches);
-                    $rows = $matches[1];
-
-                    $orders = [];
-                    $currentOrder = [];
-                    $orderKeys = [
-                        'кнтНомерЗаказаLogiKal', 'Ссылка', 'Контрагент', 'МенеджерСоставившийРасчет',
-                        'Номер', 'Организация', 'Ответственный', 'АдресДоставки',
-                        'кнтСумма', 'ПлановаяДатаПроизводства', 'кнтСтатус', 'ДокументОснование', 'СтатусОплаты'
-                    ];
-
-                    foreach ($rows as $row) {
-                        $keyValue = explode(':', trim($row), 2);
-                        if (count($keyValue) === 2) {
-                            $currentOrder[$keyValue[0]] = $keyValue[1];
-                        }
-
-                        if (count($currentOrder) === count($orderKeys)) {
-                            $orders[] = $currentOrder;
-                            $currentOrder = [];
-                        }
-                    }
-
-                    Cache::put($cacheKey, $orders, now()->addMinutes(10));
-                }
-            } catch (\Throwable $e) {
-                Log::error('Ошибка при fetchOrders: ' . $e->getMessage());
-            }
-        }
-
-        return is_array($orders) ? $orders : [];
-    }
-
     public function index()
     {
-        $admins = User::where('role_id', 1)->get();
-        $currentAdmin = auth()->user();
+        $currentLocale = session('locale', config('app.locale'));
+        $admins        = User::where('role_id', 1)->get();
+        $currentAdmin  = auth()->user();
+        $thirtyDaysAgo = Carbon::now()->subDays(30);
 
-        $clientName = $currentAdmin->name;
-        $groupName = $currentAdmin->group;
-        $groupNameParts = explode(':', str_replace(' ', '', $groupName));
-        $groupName = $groupNameParts[1] ?? '';
+        // Счётчик заказов текущего пользователя (НЕ трогаем дальше)
+        $orderCount = Order::where('user_id', $currentAdmin->id)->count();
 
-        $ordersCacheKey = "main_orders_{$clientName}_{$groupName}";
-        $financeCacheKey = "main_financialStats_{$clientName}_{$groupName}";
-        $refresh = request()->has('refresh');
+        // На всякий: чтобы compact() не падал — инициализируем пустым пагинатором
+        $orders = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 10);
 
-        // Получаем данные из кэша
-        $orders = Cache::get($ordersCacheKey);
-        $financialStats = Cache::get($financeCacheKey);
+        // Счётчик заказов по событиям (если нужно)
+        $eventOrderCounts = collect([]);
+        if (in_array($currentAdmin->role_id, [1,2,3], true)) {
+            $eventIds = Event::where('user_id', $currentAdmin->id)
+                ->where('status', 1)
+                ->pluck('id');
 
-        if ($refresh) {
-            try {
-                // === Загрузка заказов ===
-                $response = Http::withBasicAuth('КучеренкоД', 'NitraPa$$@0@!')
-                    ->acceptJson()
-                    ->timeout(30)
-                    ->post('http://185.112.41.230/darvin_test/hs/lk/DataOrders', [
-                        'client' => $clientName,
-                        'organiz' => $groupName,
-                    ]);
-
-                if ($response->successful()) {
-                    $responseBody = preg_replace('/[\x{A0}\s]+/u', ' ', $response->body());
-                    preg_match_all('/"(.*?)"/', $responseBody, $matches);
-                    $rows = $matches[1];
-
-                    $orders = [];
-                    $currentOrder = [];
-                    $orderKeys = [
-                        'кнтНомерЗаказаLogiKal', 'Ссылка', 'Контрагент', 'МенеджерСоставившийРасчет',
-                        'Номер', 'ЛК', 'Организация', 'Ответственный', 'АдресДоставки',
-                        'кнтСумма', 'ПлановаяДатаПроизводства', 'кнтСтатус', 'ДокументОснование', 'СтатусОплаты'
-                    ];
-
-                    foreach ($rows as $row) {
-                        $keyValue = explode(':', trim($row), 2);
-                        if (count($keyValue) === 2) {
-                            $currentOrder[$keyValue[0]] = $keyValue[1];
-                        }
-
-                        if (count($currentOrder) === count($orderKeys)) {
-                            $orders[] = $currentOrder;
-                            $currentOrder = [];
-                        }
-                    }
-
-                    Cache::put($ordersCacheKey, $orders, now()->addMinutes(10));
-                } else {
-                    Log::error('Ошибка запроса заказов на главной: статус ' . $response->status());
-                }
-            } catch (\Illuminate\Http\Client\ConnectionException $e) {
-                Log::error('Ошибка соединения заказов на главной: ' . $e->getMessage());
-            }
-
-            // === Подтягиваем финансы из summaryData ===
-            $summary = $this->summaryData($clientName, $groupName);
-
-            $financialStats = [
-                'balance' => $summary['overpay'],
-                'debt' => $summary['debt'],
-                'paid' => 0, // если появится значение — можно заменить
-                'deliveryDebt' => $summary['delivered'],
-                'unallocated' => $summary['unallocated'],
-            ];
-
-            Cache::put($financeCacheKey, $financialStats, now()->addMinutes(10));
-        }
-        // === Подтягиваем финансы из summaryData ===
-        $summary = $this->summaryData($clientName, $groupName);
-
-        $financialStats = [
-            'balance' => $summary['overpay'],
-            'debt' => $summary['debt'],
-            'paid' => 0, // если появится значение — можно заменить
-            'deliveryDebt' => $summary['delivered'],
-            'unallocated' => $summary['unallocated'],
-        ];
-
-        Cache::put($financeCacheKey, $financialStats, now()->addMinutes(10));
-
-        $ordersSummary = [
-            'total' => 0,
-            'cancelled' => 0,
-            'in_work' => 0,
-            'delivery' => 0,
-        ];
-
-// Получаем заказы
-        $orders = $this->fetchOrders($clientName, $groupName);
-        $ordersSummary['total'] = count($orders);
-
-        foreach ($orders as $order) {
-            $status = mb_strtolower(trim($order['кнтСтатус'] ?? ''));
-
-            if (str_contains($status, 'відм')) {
-                $ordersSummary['cancelled']++;
-            } elseif (str_contains($status, 'достав')) {
-                $ordersSummary['delivery']++;
-            } elseif (str_contains($status, 'выпол')) {
-                $ordersSummary['in_work']++;
+            foreach ($eventIds as $eventId) {
+                $orderCountForEvent = Order::where('order_id', $eventId)->count(); // <-- не портим $orderCount
+                $eventOrderCounts->push(['order_id' => $eventId, 'order_count' => $orderCountForEvent]);
             }
         }
 
+        // Статистика
+        if ($currentAdmin->role_id == 1) {
+            $withEventsAll           = Statistic::all();
+            $statisticsWithEventsType = collect();
+        } else { // роли 2 и 3
+            $withEventsAll            = collect();
+            $statisticsWithEventsType = Statistic::join('events', 'statistics.event_id', '=', 'events.id')
+                ->where('events.user_id', $currentAdmin->id)
+                ->get();
+        }
 
-        return view('admin.index', compact(
-            'currentAdmin', 'admins',  'financialStats', 'ordersSummary'
-        ));
+        $statisticsWithEvents = Statistic::join('events', 'statistics.event_id', '=', 'events.id')
+            ->where('events.user_id', $currentAdmin->id)
+            ->count();
+
+        $statisticsWithEventsUnic = Statistic::select('statistics.*')
+            ->join('events', 'statistics.event_id', '=', 'events.id')
+            ->where('events.user_id', $currentAdmin->id)
+            ->whereNotExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('statistics as s2')
+                    ->whereRaw('s2.event_id = events.id')
+                    ->whereRaw('s2.ip = statistics.ip');
+            })
+            ->distinct()
+            ->count();
+
+        $eventsWithOrders = Event::query()
+            ->where('events.user_id', $currentAdmin->id)
+            ->leftJoin('orders', 'orders.order_id', '=', 'events.id')
+            ->select([
+                'events.id',
+                'events.specialization',
+                DB::raw('COUNT(orders.id) AS order_count'),
+                DB::raw('MAX(orders.created_at) AS last_order_date'),
+                DB::raw('COALESCE(SUM(orders.amount), 0) AS total_amount'),
+            ])
+            ->groupBy('events.id', 'events.specialization')
+            ->orderByRaw('MAX(orders.created_at) IS NULL') // сначала у кого даты нет
+            ->orderByRaw('MAX(orders.created_at) DESC')    // затем по дате
+            ->get()
+            ->map(function ($row) {
+                $row->last_order_date = $row->last_order_date
+                    ? \Carbon\Carbon::parse($row->last_order_date)
+                    : null;
+                return $row;
+            });
+
+        // ---- ВАЖНО: гарантируем наличие $orders для всех ролей ----
+        if ($currentAdmin->role_id == 1) {
+            // Админ: показываем его собственные заказы (если это и есть логика)
+            $orders = Order::where('user_id', $currentAdmin->id)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        } elseif (in_array($currentAdmin->role_id, [2,3], true)) {
+            // Организатор/менеджер: заказы по его событиям
+            $eventIds = Event::where('user_id', $currentAdmin->id)->pluck('id');
+            $orders = Order::whereIn('order_id', $eventIds)
+                ->orderBy('created_at', 'desc')
+                ->paginate(10);
+        }
+        // ----------------------------------------------------------
+
+        $newOrderCount = Order::where('user_id', $currentAdmin->id)
+            ->where('created_at', '>=', $thirtyDaysAgo)
+            ->count();
+
+        $oldOrderCount = Order::where('user_id', $currentAdmin->id)
+            ->where('created_at', '<', $thirtyDaysAgo)
+            ->count();
+
+        if (in_array($currentAdmin->role_id, [1,2,3], true)) {
+            return view('admin.index', compact(
+                'currentAdmin',
+                'admins',
+                'currentLocale',
+                'orderCount',
+                'statisticsWithEventsType',
+                'withEventsAll',
+                'statisticsWithEventsUnic',
+                'statisticsWithEvents',
+                'newOrderCount',
+                'oldOrderCount',
+                'orders',
+                'eventsWithOrders'
+            ));
+        }
+
+        return abort(403);
     }
 
-    public function showFtpGalleryRaw($orderId)
+
+    public function getOrdersWithStatus(Request $request)
+    {
+        $orders = Order::where('status', 0)->get();
+
+        return response()->json($orders);
+    }
+    public function updateOrderDetails($orderId)
     {
         try {
-            $files = Storage::disk('ftp')->files($orderId);
-            $html = "<h2>Фото по заказу №{$orderId}</h2><div style='display: flex; flex-wrap: wrap;'>";
 
-            foreach ($files as $file) {
-                if (preg_match('/\.(jpe?g|png)$/i', $file)) {
-                    $filename = basename($file);
-                    $localPath = "ftp_cache/{$filename}";
+            // 1. Находим заказ
+            $order = Order::findOrFail($orderId);
+            $codeID = $order->code;
 
-                    if (!Storage::disk('public')->exists($localPath)) {
-                        $content = Storage::disk('ftp')->get($file);
-                        if (!empty($content)) {
-                            Storage::disk('public')->put($localPath, $content);
-                        }
-                    }
+// 2. Обновляем статус всех алертов с таким code
+            Alert::where('code', $codeID)->update(['status' => 1]);
 
-                    $url = asset("storage/ftp_cache/{$filename}");
-                    $html .= "<div style='margin:10px'><img src='{$url}' style='max-height:200px; border:1px solid #ccc;'></div>";
-                }
-            }
-
-            $html .= "</div>";
-            return response($html);
-
-        } catch (\Throwable $e) {
-            return response("<p style='color:red;'>Ошибка: " . $e->getMessage() . "</p>", 500);
-        }
-    }
-
-    public function getFtpImage($orderId, $itemNumber)
-    {
-        $formats = ['jpg', 'jpeg', 'png'];
-        $base = "{$orderId}/{$itemNumber}";
-
-        foreach ($formats as $ext) {
-            $ftpPath = "{$base}.{$ext}";
-
-            if (Storage::disk('ftp')->exists($ftpPath)) {
-                $contents = Storage::disk('ftp')->get($ftpPath);
-
-                if (!empty($contents)) {
-                    $localDir = "ftp_cache/{$orderId}";
-                    $localPath = "{$localDir}/" . basename($ftpPath);
-
-                    // Создаём папку, если нет
-                    if (!Storage::disk('public')->exists($localDir)) {
-                        Storage::disk('public')->makeDirectory($localDir);
-                    }
-
-                    Storage::disk('public')->put($localPath, $contents);
-
-                    return response()->json([
-                        'url' => asset("storage/{$localPath}")
-                    ]);
-                }
-            }
-        }
-
-        return response()->json([
-            'url' => asset('storage/files/no_image.png')
-        ]);
-    }
+// 3. Обновляем сам заказ
+            $order->status = 1;
+            $order->save();
 
 
-
-
-
-//    public function getFtpImage($orderId, $itemNumber)
-//    {
-//        $formats = ['jpg', 'jpeg', 'png', 'JPG'];
-//        $base = "{$orderId}/{$itemNumber}";
-//
-//        foreach ($formats as $ext) {
-//            $ftpPath = "{$base}.{$ext}";
-//
-//            if (Storage::disk('ftp')->exists($ftpPath)) {
-//                \Log::info("✅ Файл найден на FTP: {$ftpPath}");
-//
-//                $contents = Storage::disk('ftp')->get($ftpPath);
-//
-//                if (!empty($contents)) {
-//                    $localPath = "ftp_cache/" . basename($ftpPath);
-//                    Storage::disk('public')->put($localPath, $contents);
-//
-//                    \Log::info("📥 Сохранено в public: {$localPath}");
-//
-//                    return response()->json([
-//                        'url' => asset('storage/' . $localPath)
-//                    ]);
-//                } else {
-//                    \Log::warning("⚠️ Файл пустой или не получен: {$ftpPath}");
-//                }
-//            } else {
-//                \Log::warning("❌ Файл не найден на FTP: {$ftpPath}");
-//            }
-//        }
-//
-//        \Log::error("❌ Не удалось найти ни одного файла для {$base}");
-//        return response()->json([
-//            'url' => asset('storage/files/no_image.png')
-//        ]);
-//    }
-
-
-
-
-// Контроллер
-    public function getOrderDetails($number)
-    {
-        try {
-            // Отправка запроса с базовой авторизацией и заголовками
-            $response = Http::withBasicAuth('КучеренкоД', 'NitraPa$$@0@!')
-                ->withHeaders([
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ])
-                ->post('http://185.112.41.230/darvin_test/hs/lk/detailsOrder', [
-                    'number' => $number,
-                ]);
-
-            // Логирование исходного ответа для диагностики
-            \Log::info('Response from server: ' . $response->getBody());
-
-            // Декодируем ответ в ассоциативный массив
-            $responseData = json_decode($response->getBody(), true);
-
-            // Проверяем, что данные успешно получены и не пусты
-            if (is_array($responseData) && !empty($responseData)) {
-                // Возвращаем исправленные данные
-                return $responseData;
-            } else {
-                // Если данные пусты или в неверном формате, возвращаем ошибку
-                return [
-                    'error' => true,
-                    'message' => 'Invalid response format or empty response',
-                ];
-            }
+            // 4. Возвращаем JSON-ответ
+            return response()->json([
+                'success' => true,
+                'message' => 'Статусы успешно обновлены',
+                'order'   => $order
+            ]);
         } catch (\Exception $e) {
-            // Обработка ошибок
-            return [
-                'error' => true,
-                'message' => $e->getMessage(),
-            ];
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при обновлении',
+                'error'   => $e->getMessage()
+            ], 500);
         }
     }
 
-
-// Функция для исправления формата данных
-    private function fixInvalidData($data)
+    public function getOrderDetails($orderId)
     {
-        $fixedData = [];
 
-        // Пример исправления, если приходит массив с некорректными ключами или форматами
-        foreach ($data as $item) {
-            if (isset($item['Номенклатура']) && isset($item['Количество']) && isset($item['Цена'])) {
-                // Преобразуем значения в правильные типы, если требуется
-                $fixedData[] = [
-                    'Номенклатура' => (string) $item['Номенклатура'],
-                    'Количество' => (int) $item['Количество'],
-                    'Цена' => (float) str_replace(',', '', $item['Цена']), // Убираем запятые, если это нужно
-                ];
-            }
-        }
+        $order = Order::findOrFail($orderId);
+        $this->updateOrderDetails($orderId);
 
-        return $fixedData;
+        return response()->json($order);
     }
 
+    public function updateOrderStatus($orderId)
+    {
+        // Обновляем статус в таблице alerts
+        Alert::where('order_id', $orderId)
+            ->update(['status' => 0]);
+        try {
 
-
+            return response()->json(['message' => 'Статус заказа и связанных алертов успешно обновлен']);
+        } catch (\Exception $e) {
+            // В случае ошибки возвращаем сообщение об ошибке
+            return response()->json(['error' => 'Не удалось обновить статус заказа и связанных алертов'], 500);
+        }
+    }
 
 }
 
