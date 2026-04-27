@@ -1,0 +1,43 @@
+@charset "UTF-8";
+/* CSS Document */
+
+.help-block {
+    color: #f7542b !important;
+    font-weight: bold !important;
+    display: block;
+}
+
+.required-field > label:after {
+    content: " *";
+    color: #f7542b;
+
+}
+
+.nav-tabs > li > a.active {
+    color: #fff !important;
+    background-color: #e14d67 !important
+}
+
+header {
+    background: #201c23;
+}
+
+header.sticky {
+    padding: 0px;
+}
+
+a.tour_title {
+    color: #1f1d23;
+    font-size: 15px;
+    line-height: 25px;
+}
+
+#logo_home h1 a {
+    background-size: 160px 29px;
+}
+
+
+#home-search-form .dd-selected-image {
+    margin-top: 17px;
+    width: 20px;
+}

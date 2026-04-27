@@ -177,39 +177,39 @@
             <h3>Головне</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'profile' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.profile', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/user.svg") }}" class="icon-img" alt="User">
+                    <a href="{{ route('cabinet.profile') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/user.svg') }}" class="icon-img" alt="User">
                         Профіль дилера
                     </a>
                 </li>
+
                 <li class="{{ ($defaultPage ?? '') === 'dashboard' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.dashboard', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/grid-view.svg") }}" class="icon-img" alt="Dashboard">
+                    <a href="{{ route('cabinet.dashboard') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/grid-view.svg') }}" class="icon-img" alt="Dashboard">
                         Дашборд
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'orders-tracking' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.orders-tracking', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/route.svg") }}" class="icon-img" alt="Tracking">
+                    <a href="{{ route('cabinet.orders-tracking') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/route.svg') }}" class="icon-img" alt="Tracking">
                         Трекінг замовлення
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'windraw' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.windraw', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/shapes-2.svg") }}" class="icon-img" alt="WinDraw">
+                    <a href="{{ route('cabinet.windraw') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/shapes-2.svg') }}" class="icon-img" alt="WinDraw">
                         WinDraw
                     </a>
                 </li>
-
             </ul>
 
             <h3>Промо</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'promotions' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.promotions', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Speaker-megaphone-3.svg") }}"
+                    <a href="{{ route('cabinet.promotions') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Speaker-megaphone-3.svg') }}"
                              class="icon-img"
                              alt="Акції">
                         Акції
@@ -217,8 +217,8 @@
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'motivation' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.motivation', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Flash.svg") }}"
+                    <a href="{{ route('cabinet.motivation') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Flash.svg') }}"
                              class="icon-img"
                              alt="Мотивація">
                         Мотивація
@@ -229,8 +229,8 @@
             <h3>Фінанси</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'finances' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.finances', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/cash1.svg") }}"
+                    <a href="{{ route('cabinet.finances') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/cash1.svg') }}"
                              class="icon-img"
                              alt="Фінанси">
                         Фінанси
@@ -241,8 +241,8 @@
             <h3>Підтримка</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'complaints' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.complaints', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/alert-triangle.svg") }}"
+                    <a href="{{ route('cabinet.complaints') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/alert-triangle.svg') }}"
                              class="icon-img"
                              alt="Рекламації">
                         Рекламації
@@ -250,14 +250,13 @@
                 </li>
             </ul>
 
-
             <div class="logout-container">
                 <div class="menu-divider"></div>
                 <div class="logout-block"
                      onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                      style="cursor: pointer;">
                     <img
-                        src="{{ asset("themes/$theme/images/Right-enter.svg") }}"
+                        src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Right-enter.svg') }}"
                         class="icon-img"
                         alt="Exit Icon"
                     />
@@ -266,11 +265,10 @@
 
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
                     @csrf
-                    <input type="hidden" name="theme" value="{{ $theme }}">
                 </form>
-
             </div>
         </div>
+
     </div>
     <!-- Правая колонка -->
     <div class="right-column">
@@ -430,9 +428,13 @@
                                 </th>
 
                                 <th>
-{{--        <span class="th-sort th-disabled">--}}
-{{--            Етап--}}
-{{--        </span>--}}
+                                        Тип
+                                </th>
+
+                                <th>
+        <span class="th-sort th-disabled">
+            Етап
+        </span>
                                 </th>
                                 <th>
                                     <a href="{{ sortUrl('last_payment_at') }}" class="th-sort">
@@ -470,17 +472,6 @@
                                     </a>
                                 </th>
 
-{{--                                <th>--}}
-{{--                                    <a href="{{ sortUrl('margin') }}" class="th-sort">--}}
-{{--                                        Маржа--}}
-{{--                                        <img--}}
-{{--                                            src="{{ asset("themes/$theme/images/" . (request('sort') === 'margin' && request('direction') === 'asc'--}}
-{{--                    ? 'Arrow-Up.svg'--}}
-{{--                    : 'Arrow-Down.svg')) }}"--}}
-{{--                                            class="th-icon"--}}
-{{--                                        />--}}
-{{--                                    </a>--}}
-{{--                                </th>--}}
 
                             </tr>
                             </thead>
@@ -490,6 +481,8 @@
                                     <td>{{ \Carbon\Carbon::parse($row->created_at)->format('d.m.Y') }}</td>
 
                                     <td>{{ $row->order_name }}</td>
+                                    <td>{{ $row->type_doc }}</td>
+                                    </td>
                                     <td>
                                         <button data-type="{{ $row->credit > 0 ? 'Payment' : 'Score' }}">
                                             {{ $row->credit > 0 ? 'Оплата' : 'Рахунок' }}
@@ -509,7 +502,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" style="text-align:center;">Дані відсутні</td>
+                                    <td colspan="6" style="text-align:center;">Дані відсутні</td>
                                 </tr>
                             @endforelse
                         </table>

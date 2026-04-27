@@ -8,15 +8,27 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\PartnerManager;
 
 class ProfileController extends Controller
 {
     public function index()
     {
+        $user = Auth::user();
+
+        $idLk = $user->dealer_id ?? $user->id_lk ?? $user->onec_id ?? null;
+
+        $partnerManager = null;
+
+        if ($idLk) {
+            $partnerManager = PartnerManager::where('id_lk', $idLk)->first();
+        }
+
         return view('admin.cabinet.profile.index', [
             'theme' => session('theme', 'darwin'),
             'defaultPage' => 'profile',
-            'user' => Auth::user(),
+            'user' => $user,
+            'partnerManager' => $partnerManager,
         ]);
     }
 

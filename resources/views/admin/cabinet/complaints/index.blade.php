@@ -162,39 +162,39 @@
             <h3>Головне</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'profile' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.profile', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/user.svg") }}" class="icon-img" alt="User">
+                    <a href="{{ route('cabinet.profile') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/user.svg') }}" class="icon-img" alt="User">
                         Профіль дилера
                     </a>
                 </li>
+
                 <li class="{{ ($defaultPage ?? '') === 'dashboard' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.dashboard', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/grid-view.svg") }}" class="icon-img" alt="Dashboard">
+                    <a href="{{ route('cabinet.dashboard') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/grid-view.svg') }}" class="icon-img" alt="Dashboard">
                         Дашборд
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'orders-tracking' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.orders-tracking', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/route.svg") }}" class="icon-img" alt="Tracking">
+                    <a href="{{ route('cabinet.orders-tracking') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/route.svg') }}" class="icon-img" alt="Tracking">
                         Трекінг замовлення
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'windraw' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.windraw', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/shapes-2.svg") }}" class="icon-img" alt="WinDraw">
+                    <a href="{{ route('cabinet.windraw') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/shapes-2.svg') }}" class="icon-img" alt="WinDraw">
                         WinDraw
                     </a>
                 </li>
-
             </ul>
 
             <h3>Промо</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'promotions' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.promotions', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Speaker-megaphone-3.svg") }}"
+                    <a href="{{ route('cabinet.promotions') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Speaker-megaphone-3.svg') }}"
                              class="icon-img"
                              alt="Акції">
                         Акції
@@ -202,8 +202,8 @@
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'motivation' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.motivation', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Flash.svg") }}"
+                    <a href="{{ route('cabinet.motivation') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Flash.svg') }}"
                              class="icon-img"
                              alt="Мотивація">
                         Мотивація
@@ -214,8 +214,8 @@
             <h3>Фінанси</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'finances' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.finances', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/cash1.svg") }}"
+                    <a href="{{ route('cabinet.finances') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/cash1.svg') }}"
                              class="icon-img"
                              alt="Фінанси">
                         Фінанси
@@ -226,8 +226,8 @@
             <h3>Підтримка</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'complaints' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.complaints', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/alert-triangle.svg") }}"
+                    <a href="{{ route('cabinet.complaints') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/alert-triangle.svg') }}"
                              class="icon-img"
                              alt="Рекламації">
                         Рекламації
@@ -235,14 +235,13 @@
                 </li>
             </ul>
 
-
             <div class="logout-container">
                 <div class="menu-divider"></div>
                 <div class="logout-block"
                      onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                      style="cursor: pointer;">
                     <img
-                        src="{{ asset("themes/$theme/images/Right-enter.svg") }}"
+                        src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Right-enter.svg') }}"
                         class="icon-img"
                         alt="Exit Icon"
                     />
@@ -251,455 +250,44 @@
 
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
                     @csrf
-                    <input type="hidden" name="theme" value="{{ $theme }}">
                 </form>
-
             </div>
         </div>
+
     </div>
-
     <!-- Правая колонка -->
-    <div class="right-column" >
-        <!-- Рекламації -->
-        <div  class="complaints-container active">
-            <div class="complaints-header">
-                &nbsp;&nbsp; &nbsp;&nbsp;<h1 class="complaints-title">Рекламації</h1>
-
-                <div class="complaints-actions-right">
-                    <button class="New-complaint-btn">
-                        &nbsp;+&nbsp;
-                    </button>
-
-                    <button
-                        class="update-btn"
-                        id="updateUserActionBtn"
-                        data-action-url="{{ route('user.action.set') }}"
-                        data-csrf="{{ csrf_token() }}"
-                    >
-                        &nbsp;<img src="{{ asset("themes/$theme/images/Round-arrow.svg") }}"
-                             alt="Оновити"
-                             class="update-icon" />
-                        <span class="update-text"></span>
-                        <span class="update-spinner hidden"></span>
-                    </button>
-
-                </div>
-            </div>
-
-            <div class="complaints-bottom-content">
-                <div class="complaints-panel">
-
-                    {{-- ===== HEADER ===== --}}
-                    <div class="complaints-panel-head Twisting">
-                        <h2 class="complaints-subtitle">Акт звірки</h2>
-
-                        <div class="controls-right">
-                            <a
-                                href="{{ route('cabinet.complaints.export', request()->query()) }}"
-                                class="control-btn control-export"
-                                style="display:inline-flex"
-                            >
-                                <img src="{{ asset("themes/$theme/images/Upload.svg") }}" class="btn-icon" />
-                                Експорт (XLSX)
-                            </a>
-
-                            <button class="control-btn control-range" type="button" id="dateRangeBtn">
-                                <img src="{{ asset("themes/$theme/images/calendar-dots.svg") }}" class="btn-icon" />
-
-                                @php
-                                    $rangeLabels = [
-                                        'all' => 'За весь час',
-                                        '1'   => 'За сьогодні',
-                                        '7'   => 'За 7 днів',
-                                        '30'  => 'За 30 днів',
-                                        '90'  => 'За 90 днів',
-                                        '180' => 'За 180 днів',
-                                        '365' => 'За рік',
-                                    ];
-                                    $currentRange = request('date_range', 'all');
-                                @endphp
-
-                                {{ $rangeLabels[$currentRange] ?? 'За весь час' }}
-
-                                <img src="{{ asset("themes/$theme/images/Arrow-Down.svg") }}" class="btn-icon-right" />
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- ===== POPUP RANGE (ВНЕ controls-right) ===== --}}
-                    <form method="GET" id="dateRangeForm">
-                        <input
-                            type="hidden"
-                            name="date_range"
-                            id="dateRangeInput"
-                            value="{{ request('date_range', 'all') }}"
-                        >
-                    </form>
-
-                    <div class="table-popup table-popup-sort" id="dateRangePopup">
-                        <span data-days="all">За весь час</span>
-                        <span data-days="1">За сьогодні</span>
-                        <span data-days="7">За 7 днів</span>
-                        <span data-days="30">За 30 днів</span>
-                        <span data-days="90">За 90 днів</span>
-                        <span data-days="180">За 180 днів</span>
-                        <span data-days="365">За рік</span>
-                    </div>
-
-                    {{-- ===== CARDS ===== --}}
-                    <div class="finances-cards">
-                        <div class="finances-card finances-card--green">
-                            <p class="card-text">Початковий баланс</p>
-                            <span class="card-value">₴0</span>
-                            <img src="{{ asset("themes/$theme/images/Green checkmark box.svg") }}" class="card-icon" />
-                        </div>
-
-                        <div class="finances-card finances-card--blue">
-                            <p class="card-text">Нараховано (рахунки)</p>
-                            <span class="card-value">₴128 400</span>
-                            <img src="{{ asset("themes/$theme/images/Blue checkmark box.svg") }}" class="card-icon" />
-                        </div>
-
-                        <div class="finances-card finances-card--orange">
-                            <p class="card-text">Оплачено / списано</p>
-                            <span class="card-value">₴96 200</span>
-                            <img src="{{ asset("themes/$theme/images/Orange checkmark box.svg") }}" class="card-icon" />
-                        </div>
-                    </div>
-
-                    {{-- ===== TABLE ===== --}}
-                    <div class="complaints-table-wrapper complaints-table-wrapper-simple">
-                        <div class="table-scroll-wrapper">
-                            <table class="complaints-table">
-                                <thead>
-                                <tr>
-
-                                    <th>
-                                        <a href="{{ sortUrl('complaint_number') }}" class="th-sort">
-                                            № Замовлення
-                                            <img src="{{ asset("themes/$theme/images/" . (request('sort') === 'complaint_number' && request('direction') === 'asc'
-                ? 'Arrow-Up.svg'
-                : 'Arrow-Down.svg')) }}" class="th-icon">
-                                        </a>
-                                    </th>
-
-                                    <th>
-                                        <a href="{{ sortUrl('complaint_date') }}" class="th-sort">
-                                            Дата
-                                            <img src="{{ asset("themes/$theme/images/" . (request('sort') === 'complaint_date' && request('direction') === 'asc'
-                ? 'Arrow-Up.svg'
-                : 'Arrow-Down.svg')) }}" class="th-icon">
-                                        </a>
-                                    </th>
-
-                                    <th>Клієнт</th>
-
-                                    <th>Тип</th>
-
-                                    <th>
-                                        <a href="{{ sortUrl('status') }}" class="th-sort">
-                                            Статус
-                                            <img src="{{ asset("themes/$theme/images/" . (request('sort') === 'status' && request('direction') === 'asc'
-                ? 'Arrow-Up.svg'
-                : 'Arrow-Down.svg')) }}" class="th-icon">
-                                        </a>
-                                    </th>
-
-                                    <th>
-                                        <a href="{{ sortUrl('amount') }}" class="th-sort">
-                                            Сума
-                                            <img src="{{ asset("themes/$theme/images/" . (request('sort') === 'amount' && request('direction') === 'asc'
-                ? 'Arrow-Up.svg'
-                : 'Arrow-Down.svg')) }}" class="th-icon">
-                                        </a>
-                                    </th>
-
-                                    <th>Дії</th>
-
-                                </tr>
-                                </thead>
-
-
-                                <tbody>
-                                @foreach ($complaints as $complaint)
-                                    <tr>
-                                        <td data-label="№ Замовлення">
-                                            {{ $complaint->complaint_number }}
-                                        </td>
-
-                                        <td data-label="Дата">
-                                            {{ optional($complaint->complaint_date)->format('d.m.Y') }}
-                                        </td>
-
-                                        <td data-label="Клієнт">
-                                            {{ auth()->user()->name }}
-                                        </td>
-
-                                        <td data-label="Тип">
-                                            Брак продукції
-                                        </td>
-
-                                        <td data-label="Статус">
-                                            <button
-                                                class="complaints-status"
-                                                data-status="{{ $complaint->posted ? 'Resolved' : 'In-work' }}"
-                                            >
-                                                {{ $complaint->posted ? 'Вирішено' : 'В роботі' }}
-                                            </button>
-                                        </td>
-
-                                        <td data-label="Сума" class="debt">
-                                            ₴12 840
-                                        </td>
-
-                                        <td data-label="Дії">
-                                            <button
-                                                class="complaints-status"
-                                                data-status="Details"
-                                                data-number="{{ $complaint->complaint_number }}"
-                                                data-defect="{{ $complaint->defect }}"
-                                                data-comment="{{ $complaint->comment }}"
-                                            >
-                                                Деталі
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                </tbody>
-
-                                {{-- Пустой tfoot — нужен для CSS --}}
-                                <tfoot></tfoot>
-                            </table>
-                        </div>
-                    </div>
-
-                    {{-- ===== PAGINATION ===== --}}
-                    @if ($complaints instanceof \Illuminate\Pagination\LengthAwarePaginator && $complaints->total() > $complaints->perPage())
-                        <div class="finances-table-summary navigation">
-                            <div class="footer-table-left">
-                                <div class="footer-table-pagination-wrapper">
-                                    <span class="footer-text">Показувати</span>
-
-                                    <form method="GET">
-                                        <select name="per_page" onchange="this.form.submit()">
-                                            <option value="5" {{ $perPage==5 ? 'selected':'' }}>5</option>
-                                            <option value="10" {{ $perPage==10 ? 'selected':'' }}>10</option>
-                                        </select>
-
-                                        <input type="hidden" name="date_range" value="{{ request('date_range','30') }}">
-                                    </form>
-                                </div>
-                            </div>
-
-                            <div class="footer-table-right">
-                                <div class="footer-btn-group">
-                                    @if ($complaints->onFirstPage())
-                                        <button class="footer-btn prev" disabled>Попередня</button>
-                                    @else
-                                        <a href="{{ $complaints->previousPageUrl() }}" class="footer-btn prev">Попередня</a>
-                                    @endif
-
-                                    @foreach ($complaints->getUrlRange(1, $complaints->lastPage()) as $page => $url)
-                                        @if ($page == $complaints->currentPage())
-                                            <button class="footer-btn active-page">{{ $page }}</button>
-                                        @else
-                                            <a href="{{ $url }}" class="footer-btn">{{ $page }}</a>
-                                        @endif
-                                    @endforeach
-
-                                    @if ($complaints->hasMorePages())
-                                        <a href="{{ $complaints->nextPageUrl() }}" class="footer-btn next">Наступна</a>
-                                    @else
-                                        <button class="footer-btn next" disabled>Наступна</button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                </div>
-            </div>
-
-
-
-            <div class="complaints-popup report-popup">
-                <!-- Хедер -->
-                <div class="complaints-popup-header">
-                    <h2 class="complaints-popup-title">Рекламації</h2>
-                    <img
-                        src="{{ asset("themes/$theme/images/close.svg") }}"
-                        alt="Закрити"
-                        class="complaints-popup-close report-popup-close"
-                    />
-                </div>
-
-                <!-- Контент -->
-                <div class="complaints-popup-body">
-                    <!-- № Замовлення -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">DWN-10452*</p>
-                        <button class="complaints-status" data-status="Overdue">
-                            Прострочено
-                        </button>
-
-                        <div class="complaints-row">
-                            <p class="complaints-label">Сума компенсації:</p>
-                            <span>₴2 600</span>
-                        </div>
-                    </div>
-
-                    <!-- Разделитель -->
-                    <div class="complaints-divider"></div>
-
-                    <!-- Опис -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Опис</p>
-
-                        <div class="complaints-row">
-                            <p class="complaints-label">Тип:</p>
-                            <span class="complaints-label">Брак продукції</span>
-                        </div>
-
-                        <div class="complaints-row">
-                            <p class="complaints-label">Причина:</p>
-                            <span class="complaints-label"
-                            >Виявлено тріщини на профілі</span
-                            >
-                        </div>
-                    </div>
-
-                    <!-- Файли -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Файли</p>
-
-                        <div class="complaints-files">
-                            <div class="complaints-file">
-                                <img src="{{ asset("themes/$theme/images/file-text.svg") }}" alt="File" />
-                            </div>
-                            <div class="complaints-file">
-                                <img src="{{ asset("themes/$theme/images/file-text.svg") }}" alt="File" />
-                            </div>
-                        </div>
-
-                        <div class="complaints-add-file">
-                            <img src="{{ asset("themes/$theme/images/paperclip.svg") }}" alt="Прикріпити" />
-                            <p>Додати файли</p>
-                        </div>
-                    </div>
-
-                    <!-- Коментарі -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Коментарі</p>
-                        <p class="complaints-comment-meta">
-                            Іванов О.М. · 2 години тому
-                        </p>
-                        <p class="complaints-comment-text">
-                            Зв'язався з клієнтом, чекаємо на додаткові фото
-                        </p>
-                    </div>
-
-                    <!-- Історія змін -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Історія змін</p>
-
-                        <div class="complaints-history-item">
-                            <img src="{{ asset("themes/$theme/images/clock-hour-3.svg") }}" alt="Історія" />
-                            <p>15.08.2025 14:30 — Статус змінено на "Прострочено"</p>
-                        </div>
-
-                        <div class="complaints-history-item">
-                            <img src="{{ asset("themes/$theme/images/clock-hour-3.svg") }}" alt="Історія" />
-                            <p>15.08.2025 09:15 — Рекламацію створено</p>
-                        </div>
-                    </div>
-
-                    <!-- Разделитель -->
-                    <div class="complaints-divider"></div>
-
-                    <!-- Кнопки -->
-                    <div class="complaints-actions">
-                        <button class="complaints-btn create">Оновити статус</button>
-                        <button class="complaints-btn cancel">
-                            Закрити як вирішене
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Оверлей для попапа рекламаций -->
-            <div class="complaints-popup-overlay"></div>
-
-            <div class="complaints-popup new-complaint-popup">
-                <!-- Хедер -->
-                <div class="complaints-popup-header">
-                    <h2 class="complaints-popup-title">&nbsp;+&nbsp;</h2>
-                    <img
-                        src="{{ asset("themes/$theme/images/close.svg") }}"
-                        alt="Закрити"
-                        class="complaints-popup-close new-complaint-popup-close"
-                    />
-                </div>
-
-                <!-- Контент -->
-                <div class="complaints-popup-body">
-                    <!-- № Замовлення -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">№ Замовлення*</p>
-                        <input
-                            type="text"
-                            class="complaints-input"
-                            placeholder="Пошук замовлення"
-                        />
-                    </div>
-
-                    <!-- Тип проблеми -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Тип проблеми*</p>
-                        <input
-                            type="text"
-                            class="complaints-input"
-                            placeholder="Оберіть тип"
-                        />
-                    </div>
-
-                    <!-- Опис проблеми -->
-                    <div class="complaints-field">
-                        <p class="complaints-label">Опис проблеми*</p>
-                        <input
-                            type="text"
-                            class="complaints-input"
-                            placeholder="Детальний опис проблеми"
-                        />
-                    </div>
-
-                    <!-- Додати фото/файли -->
-                    <div class="complaints-field complaints-upload">
-                        <p class="complaints-label">Додати фото/файли</p>
-                        <div class="complaints-upload-box">
-                            <img
-                                src="{{ asset("themes/$theme/images/upload-cloud.svg") }}"
-                                alt="Upload"
-                                class="complaints-upload-icon"
-                            />
-                            <p class="complaints-upload-text">
-                                Drag & drop file here or <span>choose file</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <!-- Разделитель -->
-                    <div class="complaints-divider"></div>
-
-                    <!-- Кнопки -->
-                    <div class="complaints-actions">
-                        <button class="complaints-btn create">Створити</button>
-                        <button class="complaints-btn cancel">Скасувати</button>
-                    </div>
-                </div>
-            </div>
+    <div class="right-column">
+        <style>
+            .WinDraw-card {
+                width: 420px;
+                background: #ffffff;
+                border-radius: 20px;
+                padding: 40px 32px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+        </style>
+
+        <div class="promo-block-content">
+            <img
+                src="{{ asset("themes/$theme/images/Development, idea, keyboard.svg") }}"
+                alt="Иконка"
+                class="promo-info-icon"
+            />
+            <h1 class="promo-title">
+                Вибачте, наразі ведеться розробка сторінки
+            </h1>
+            <p class="promo-text">
+                Ми вже працюємо над цим розділом — поверніться трохи згодом.
+            </p>
         </div>
 
-        <div class="partner">
+        <div class="partner" style="margin-top: 0px;">
             @if ($theme === 'goodwin')
                 <img src="{{ asset("themes/$theme/images/veka_280.png") }}" alt="Rehau Partner">
             @else

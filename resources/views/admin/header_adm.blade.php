@@ -38,7 +38,8 @@
     }
 
     .cabinet-title {
-        font-size: 12px;
+        font-size: 9px;
+        margin-top: -5px;
         font-weight: 500;
         color: #5a5b5d;         /* чёрный текст */
         text-align: center;
@@ -108,7 +109,7 @@
                     <!-- Контейнер для сообщений -->
                     <div class="msg-content" id="notifList"></div>
                     <div class="msg-footer">
-                        <a href="/cabinet/orders-tracking?theme=darwin" class="msg-view-all">
+                        <a href="/cabinet/orders-tracking" class="msg-view-all">
                             Переглянути усі
                             <img src="{{ asset("themes/$theme/images/Green-arrow.svg") }}" alt="Green-arrow" class="msg-arrow-icon">
                         </a>

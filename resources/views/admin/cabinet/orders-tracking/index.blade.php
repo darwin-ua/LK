@@ -243,6 +243,13 @@
             text-decoration: none;
         }
 
+        .invoice-created-row {
+            background-color: #fff3cd !important;
+        }
+
+        .invoice-created-row td {
+            background-color: #fff3cd !important;
+        }
 
     </style>
     <div class="left-column">
@@ -250,39 +257,39 @@
             <h3>Головне</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'profile' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.profile', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/user.svg") }}" class="icon-img" alt="User">
+                    <a href="{{ route('cabinet.profile') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/user.svg') }}" class="icon-img" alt="User">
                         Профіль дилера
                     </a>
                 </li>
+
                 <li class="{{ ($defaultPage ?? '') === 'dashboard' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.dashboard', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/grid-view.svg") }}" class="icon-img" alt="Dashboard">
+                    <a href="{{ route('cabinet.dashboard') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/grid-view.svg') }}" class="icon-img" alt="Dashboard">
                         Дашборд
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'orders-tracking' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.orders-tracking', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/route.svg") }}" class="icon-img" alt="Tracking">
+                    <a href="{{ route('cabinet.orders-tracking') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/route.svg') }}" class="icon-img" alt="Tracking">
                         Трекінг замовлення
                     </a>
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'windraw' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.windraw', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/shapes-2.svg") }}" class="icon-img" alt="WinDraw">
+                    <a href="{{ route('cabinet.windraw') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/shapes-2.svg') }}" class="icon-img" alt="WinDraw">
                         WinDraw
                     </a>
                 </li>
-
             </ul>
 
             <h3>Промо</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'promotions' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.promotions', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Speaker-megaphone-3.svg") }}"
+                    <a href="{{ route('cabinet.promotions') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Speaker-megaphone-3.svg') }}"
                              class="icon-img"
                              alt="Акції">
                         Акції
@@ -290,8 +297,8 @@
                 </li>
 
                 <li class="{{ ($defaultPage ?? '') === 'motivation' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.motivation', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/Flash.svg") }}"
+                    <a href="{{ route('cabinet.motivation') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Flash.svg') }}"
                              class="icon-img"
                              alt="Мотивація">
                         Мотивація
@@ -302,8 +309,8 @@
             <h3>Фінанси</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'finances' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.finances', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/cash1.svg") }}"
+                    <a href="{{ route('cabinet.finances') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/cash1.svg') }}"
                              class="icon-img"
                              alt="Фінанси">
                         Фінанси
@@ -314,8 +321,8 @@
             <h3>Підтримка</h3>
             <ul class="menu">
                 <li class="{{ ($defaultPage ?? '') === 'complaints' ? 'active' : '' }}">
-                    <a href="{{ route('cabinet.complaints', ['theme' => $theme]) }}">
-                        <img src="{{ asset("themes/$theme/images/alert-triangle.svg") }}"
+                    <a href="{{ route('cabinet.complaints') }}">
+                        <img src="{{ asset('themes/' . session('theme', 'darwin') . '/images/alert-triangle.svg') }}"
                              class="icon-img"
                              alt="Рекламації">
                         Рекламації
@@ -323,14 +330,13 @@
                 </li>
             </ul>
 
-
             <div class="logout-container">
                 <div class="menu-divider"></div>
                 <div class="logout-block"
                      onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
                      style="cursor: pointer;">
                     <img
-                        src="{{ asset("themes/$theme/images/Right-enter.svg") }}"
+                        src="{{ asset('themes/' . session('theme', 'darwin') . '/images/Right-enter.svg') }}"
                         class="icon-img"
                         alt="Exit Icon"
                     />
@@ -339,11 +345,10 @@
 
                 <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display:none;">
                     @csrf
-                    <input type="hidden" name="theme" value="{{ $theme }}">
                 </form>
-
             </div>
         </div>
+
     </div>
     <!-- Правая колонка -->
     <div class="right-column">
@@ -592,9 +597,11 @@
                                         $uiStatus = $statusMap[$order->status_1c] ?? '';
                                     @endphp
 
-                                    <tr data-status="{{ $uiStatus }}">
-
-                                    <td>{{ $order->order_number }}</td>
+                                    <tr
+                                        data-status="{{ $uiStatus }}"
+                                        class="{{ !empty($order->invoice_request_id) ? 'invoice-created-row' : '' }}"
+                                    >
+                                        <td>{{ $order->order_number }}</td>
 
                                         <td>
                                             {{ \Carbon\Carbon::parse($order->created_at)->format('d.m.Y') }}
@@ -607,7 +614,6 @@
                                             }}
                                         </td>
 
-
                                         <td>
                                             {{ $order->planned_shipping_date
                                                 ? \Carbon\Carbon::parse($order->planned_shipping_date)->format('d.m.Y')
@@ -617,6 +623,7 @@
 
                                         <td>
                                             @if(!empty($order->status_1c))
+
                                                 <button
                                                     class="status-btn"
                                                     data-type="score"
@@ -624,17 +631,33 @@
                                                 >
                                                     {{ $order->status_1c }}
                                                 </button>
+                                                @if(!empty($order->invoice_request_id))
+                                                    <span style="
+                    display:inline-block;
+                    border-radius:6px;
+                    background:#ffc107;
+                    color:#000;
+                    font-size:12px;
+                    font-weight:600;
+                ">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" class="bi bi-journal-check" viewBox="0 0 16 16">
+  <path fill-rule="evenodd" d="M10.854 6.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 8.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+  <path d="M3 0h10a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2v-1h1v1a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v1H1V2a2 2 0 0 1 2-2"/>
+  <path d="M1 5v-.5a.5.5 0 0 1 1 0V5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0V8h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1zm0 3v-.5a.5.5 0 0 1 1 0v.5h.5a.5.5 0 0 1 0 1h-2a.5.5 0 0 1 0-1z"/>
+</svg>
+                </span>
+                                                @endif
                                             @else
                                                 —
                                             @endif
                                         </td>
-
 
                                         <td>
                                             ₴{{ number_format($order->amount, 0, ',', ' ') }}
                                         </td>
 
                                         <td>
+
                                             <img
                                                 src="{{ asset("themes/$theme/images/burger-dots.svg") }}"
                                                 class="action-icon"
@@ -643,12 +666,11 @@
                                             />
                                         </td>
                                     </tr>
+
                                 @empty
-                                    <tr>
-                                        <td colspan="6" style="text-align:center; padding:20px;">
-                                            Замовлення відсутні
-                                        </td>
-                                    </tr>
+                                    <td colspan="7" style="text-align:center; padding:20px;">
+                                        Замовлення відсутні
+                                    </td>
                                 @endforelse
                                 </tbody>
                             </table>
@@ -673,7 +695,8 @@
                                                 >
                                                     <option value="5"  {{ $perPage == 5 ? 'selected' : '' }}>5</option>
                                                     <option value="10" {{ $perPage == 10 ? 'selected' : '' }}>10</option>
-                                                    <option value="10" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
+                                                    <option value="20" {{ $perPage == 20 ? 'selected' : '' }}>20</option>
+                                                    <option value="50" {{ $perPage == 50 ? 'selected' : '' }}>50</option>
                                                 </select>
                                             </div>
 
@@ -765,7 +788,7 @@
                             class="table-popup-icon"
                             alt="Рахунок"
                         />
-                        <span>Створити/Відкрити рахунок</span>
+                        <span>Створити</span>
                     </div>
                 </div>
 
@@ -871,7 +894,7 @@
                     <!-- Заголовок -->
                     <div class="invoice-request-header">
                         <h2 class="invoice-request-title">
-                            Запит на виставлення рахунку
+                            Запит на виставлення рахунку ииии
                         </h2>
                         <img
                             src="{{ asset("themes/$theme/images/close.svg") }}"

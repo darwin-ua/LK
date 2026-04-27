@@ -14,12 +14,13 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OrdersTrackingController extends Controller
 {
+
     public function index(Request $request)
     {
         $theme = session('theme', 'darwin');
 
         $perPage = (int) $request->get('per_page', 10);
-        $perPage = in_array($perPage, [5, 10, 20]) ? $perPage : 10;
+        $perPage = in_array($perPage, [5, 10, 20, 50]) ? $perPage : 20;
 
         // ===== SORTING =====
         $sortable = [
@@ -43,43 +44,44 @@ class OrdersTrackingController extends Controller
 
         /*
          |--------------------------------------------------------------------------
-         | 🔹 БАЗОВЫЙ ЗАПРОС (ВСЕГДА ОДИНАКОВЫЙ)
+         | 🔹 БАЗОВЫЙ ЗАПРОС
          |--------------------------------------------------------------------------
          */
-        $baseQuery = Order::where('user_id', auth()->id());
+        $baseQuery = Order::query()
+            ->where('orders.user_id', auth()->id());
 
         /*
          |--------------------------------------------------------------------------
-         | 🔍 ПОИСК (общий)
+         | 🔍 ПОИСК
          |--------------------------------------------------------------------------
          */
         if ($request->filled('q')) {
             $search = trim($request->q);
 
             $baseQuery->where(function ($q) use ($search) {
-                $q->where('order_number', 'like', "%{$search}%")
-                    ->orWhere('client', 'like', "%{$search}%");
+                $q->where('orders.order_number', 'like', "%{$search}%")
+                    ->orWhere('orders.client', 'like', "%{$search}%");
             });
         }
 
         /*
          |--------------------------------------------------------------------------
-         | 📅 ФИЛЬТР ПО ДАТЕ (общий)
+         | 📅 ФИЛЬТР ПО ДАТЕ
          |--------------------------------------------------------------------------
          */
         if ($request->filled('date_range') && $request->date_range !== 'all') {
             $days = (int) $request->date_range;
-            $baseQuery->where('created_at', '>=', now()->subDays($days));
+            $baseQuery->where('orders.created_at', '>=', now()->subDays($days));
         }
 
         /*
          |--------------------------------------------------------------------------
-         | 🔢 СТАТИЧЕСКИЕ СЧЁТЧИКИ (НЕ ЗАВИСЯТ ОТ stage)
+         | 🔢 СТАТИЧЕСКИЕ СЧЁТЧИКИ
          |--------------------------------------------------------------------------
          */
         $statusCounts = (clone $baseQuery)
-            ->selectRaw('status_1c, COUNT(*) as total')
-            ->groupBy('status_1c')
+            ->selectRaw('orders.status_1c, COUNT(*) as total')
+            ->groupBy('orders.status_1c')
             ->pluck('total', 'status_1c');
 
         $totalCount = (clone $baseQuery)->count();
@@ -93,7 +95,7 @@ class OrdersTrackingController extends Controller
 
         /*
          |--------------------------------------------------------------------------
-         | 🔽 ФИЛЬТР ПО ЭТАПУ (ТОЛЬКО ТАБЛИЦА)
+         | 🔽 ФИЛЬТР ПО ЭТАПУ
          |--------------------------------------------------------------------------
          */
         if ($request->filled('stage')) {
@@ -103,24 +105,38 @@ class OrdersTrackingController extends Controller
                 'vyrobnytctvo' => 'Выполняется',
                 'vykonano'     => 'Виконано',
                 'reklamaciya'  => 'Отменен',
-                'reserved'     => 'Забронирован', // 👈 ОТДЕЛЬНЫЙ СТАТУС
+                'reserved'     => 'Забронирован',
             ];
 
             if (isset($stageMap[$request->stage])) {
-                $query->where('status_1c', $stageMap[$request->stage]);
+                $query->where('orders.status_1c', $stageMap[$request->stage]);
             }
         }
 
         /*
          |--------------------------------------------------------------------------
-         | 📑 ПАГИНАЦИЯ
+         | 📑 ПАГИНАЦИЯ + ПОДТЯГИВАЕМ ДАННЫЕ ПО СЧЁТУ
          |--------------------------------------------------------------------------
          */
         $orders = $query
-            ->orderBy($sortable[$sort], $direction)
+            ->leftJoin('order_invoice_requests as oir', function ($join) {
+                $join->on('oir.order_id', '=', 'orders.id')
+                    ->whereRaw('oir.id = (
+                    SELECT MAX(oir2.id)
+                    FROM order_invoice_requests oir2
+                    WHERE oir2.order_id = orders.id
+                )');
+            })
+            ->select(
+                'orders.*',
+                'oir.id as invoice_request_id',
+                'oir.status as invoice_request_status',
+                'oir.invoice_number as invoice_number',
+                'oir.created_at as invoice_created_at'
+            )
+            ->orderBy('orders.' . $sortable[$sort], $direction)
             ->paginate($perPage)
             ->withQueryString();
-
 
         /*
          |--------------------------------------------------------------------------
@@ -134,8 +150,8 @@ class OrdersTrackingController extends Controller
             'perPage'      => $perPage,
             'dateRange'    => $request->get('date_range', 'all'),
             'statusCounts' => $statusCounts,
-            'sort'      => $sort,
-            'direction' => $direction,
+            'sort'         => $sort,
+            'direction'    => $direction,
             'totalCount'   => $totalCount,
         ]);
     }
