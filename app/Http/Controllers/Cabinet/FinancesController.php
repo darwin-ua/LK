@@ -88,6 +88,12 @@ class FinancesController extends Controller
             'p.last_payment_at',
             'p.debit',
             'p.credit',
+
+            DB::raw("CASE
+        WHEN p.credit > 0 THEN 'Оплата'
+        ELSE 'Рахунок'
+    END as type_doc"),
+
             DB::raw('o.amount as order_amount'),
             DB::raw('(p.credit - p.debit) as margin'),
         ]);
