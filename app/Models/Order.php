@@ -12,7 +12,17 @@ class Order extends Model
 
     protected $table = 'orders';
 
-    protected $guarded = [];
+    protected $guarded = [
+        'id',
+        'created_at',
+        'updated_at',
+        'user_id',
+        'paid',
+        'amount',
+        'status',
+        'status_1c',
+        'token',
+    ];
 
     protected $casts = [
         'created_at' => 'datetime',

@@ -21,7 +21,7 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'id_lk', // Добавляем это поле
+        'id_lk',
         'code_part',
         'name',
         'group',
@@ -29,8 +29,7 @@ class User extends Authenticatable
         'email',
         'password',
         'usertype',
-        'role_id',
-        'organization', // ← добавить
+        'organization',
     ];
 
 
