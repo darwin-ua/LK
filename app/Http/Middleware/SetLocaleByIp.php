@@ -12,7 +12,7 @@ class SetLocaleByIp
     public function handle(Request $request, Closure $next)
     {
         $ip = $request->ip();
-        Log::info("IP Address: {$ip}");
+
 
         $cacheKey = "locale_for_ip_{$ip}";
         if (Cache::has($cacheKey)) {
