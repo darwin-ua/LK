@@ -29,32 +29,22 @@ class InvoiceController extends Controller
             // 2. Валидация
             // ======================================================
             $data = $request->validate([
-                'order_id'     => 'required|integer',
-                'company_name' => 'nullable|string',
-                'contact_name' => 'nullable|string',
-                'edrpou'       => 'nullable|string',
-                'email'        => 'nullable|string',
-                'phone'        => 'nullable|string',
-                'amount'       => 'required|numeric',
-                'install'      => 'nullable|boolean',
-                'contract'     => 'nullable|boolean',
+                'order_id'     => ['required', 'integer', 'exists:orders,id'],
+                'company_name' => ['nullable', 'string', 'max:255'],
+                'contact_name' => ['nullable', 'string', 'max:255'],
+                'edrpou'       => ['nullable', 'string', 'max:20'],
+                'email'        => ['nullable', 'email', 'max:255'],
+                'phone'        => ['nullable', 'string', 'max:30'],
+                'install'      => ['nullable', 'boolean'],
+                'contract'     => ['nullable', 'boolean'],
 
-                'ПлатникПДВ'   => 'nullable|boolean',
-                'Бюджет'       => 'nullable|boolean',
+                'ПлатникПДВ'   => ['nullable', 'boolean'],
+                'Бюджет'       => ['nullable', 'boolean'],
             ]);
 
-            \Log::info('Invoice validation passed', [
-                'data' => $data,
-            ]);
-
-            // ======================================================
-            // 3. Заказ
-            // ======================================================
-            \Log::info('Trying to find order', [
-                'order_id' => $data['order_id'],
-            ]);
-
-            $order = Order::findOrFail($data['order_id']);
+            $order = Order::where('id', $data['order_id'])
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
 
             \Log::info('Order found', [
                 'order_id' => $order->id,
@@ -87,7 +77,7 @@ class InvoiceController extends Controller
                 'user_id' => $order->user_id,
             ]);
 
-            $user = User::findOrFail($order->user_id);
+            $user = auth()->user();
 
             \Log::info('Dealer user found', [
                 'user_id' => $user->id,
@@ -154,6 +144,7 @@ class InvoiceController extends Controller
             // ======================================================
             // 7. Payload для 1С
             // ======================================================
+            $invoiceAmount = (float) $order->amount;
             $payload = [
                 'Организация' => 'Дарвін',
 
@@ -166,7 +157,7 @@ class InvoiceController extends Controller
                 'ТелефонПлательщика'          => $data['phone'] ?? '',
                 'ПИБКонтактноеЛицо'           => $data['contact_name'] ?? '',
 
-                'Сумма' => (float) $data['amount'],
+                'Сумма' => $invoiceAmount,
                 'Комментарий' => 'Создано з ЛК дилера',
 
                 'ВыделятьМонтажОтдельнойСтрокойВСчете' => (bool) ($data['install'] ?? false),
@@ -178,7 +169,11 @@ class InvoiceController extends Controller
                 'НомерЗаказа' => (string) $order->client_order_number,
             ];
 
-            \Log::info('Invoice payload to 1C', $payload);
+            \Log::info('Invoice payload prepared', [
+                'order_id' => $order->id,
+                'client_order_number' => $order->client_order_number,
+                'amount' => $invoiceAmount,
+            ]);
 
             // ======================================================
             // 8. Проверяем, существует ли таблица логов
@@ -330,7 +325,6 @@ class InvoiceController extends Controller
             return response()->json([
                 'status'  => 500,
                 'message' => 'Помилка при створенні рахунку',
-                'details' => $e->getMessage(),
             ], 500);
         }
     }
