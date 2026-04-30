@@ -1,13 +1,14 @@
 <?php
 
-
 namespace App\Http\Controllers\Cabinet;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use App\Models\PartnerManager;
 
 class ProfileController extends Controller
@@ -36,21 +37,31 @@ class ProfileController extends Controller
     public function uploadAvatar(Request $request)
     {
         $request->validate([
-            'avatar' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'avatar' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
         ]);
 
         $user = Auth::user();
 
+        if (!$user) {
+            abort(401);
+        }
+
         // удалить старый файл
         if ($user->avatar) {
             $oldPath = public_path($user->avatar);
-            if (file_exists($oldPath)) {
-                unlink($oldPath);
+
+            // защита: удаляем только из uploads/avatars
+            $avatarsDir = realpath(public_path('uploads/avatars'));
+            $oldRealPath = realpath($oldPath);
+
+            if ($avatarsDir && $oldRealPath && str_starts_with($oldRealPath, $avatarsDir) && file_exists($oldRealPath)) {
+                unlink($oldRealPath);
             }
         }
 
-        // имя файла
-        $fileName = uniqid() . '.' . $request->file('avatar')->getClientOriginalExtension();
+        // имя файла безопасное, без оригинального имени пользователя
+        $extension = $request->file('avatar')->extension();
+        $fileName = Str::uuid() . '.' . $extension;
 
         // сохранить файл
         $request->file('avatar')->move(
@@ -70,11 +81,19 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
+        if (!$user) {
+            abort(401);
+        }
+
         if ($user->avatar) {
             $fullPath = public_path($user->avatar);
 
-            if (file_exists($fullPath)) {
-                unlink($fullPath);
+            // защита: удаляем только из uploads/avatars
+            $avatarsDir = realpath(public_path('uploads/avatars'));
+            $realPath = realpath($fullPath);
+
+            if ($avatarsDir && $realPath && str_starts_with($realPath, $avatarsDir) && file_exists($realPath)) {
+                unlink($realPath);
             }
 
             $user->avatar = null;
@@ -88,10 +107,17 @@ class ProfileController extends Controller
     {
         $request->validate([
             'current_password' => ['required'],
-            'new_password' => ['required', 'string', 'min:8'],
+            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Користувач не авторизований',
+            ], 401);
+        }
 
         if (!Hash::check($request->current_password, $user->password)) {
             return response()->json([
@@ -112,44 +138,34 @@ class ProfileController extends Controller
     public function updatePersonalInfo(Request $request)
     {
         try {
-
-            // === Ручная валидация (чтобы не было "тихих" 422) ===
-            $validator = \Validator::make($request->all(), [
-                'first_name'   => 'required|string|max:255',
-                'last_name'    => 'required|string|max:255',
-                'email'        => 'required|email|max:255',
-                'phone'        => 'nullable|string|max:30',
-                'adres'        => 'nullable|string|max:255',
-                'type_company' => 'nullable|string|max:255',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'error'   => 'Validation failed',
-                    'details' => $validator->errors(),
-                ], 422);
-            }
-
-            $validated = $validator->validated();
-
-            // === Авторизация ===
             $user = Auth::user();
 
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'error'   => 'User not authenticated',
+                    'error' => 'Користувач не авторизований',
                 ], 401);
             }
 
-            // === Обновление данных ===
+            $validated = $request->validate([
+                'first_name' => ['required', 'string', 'max:255'],
+                'last_name' => ['required', 'string', 'max:255'],
+                'email' => [
+                    'required',
+                    'email',
+                    'max:255',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
+                'phone' => ['nullable', 'string', 'max:30'],
+                'adres' => ['nullable', 'string', 'max:255'],
+                'type_company' => ['nullable', 'string', 'max:255'],
+            ]);
+
             $user->name = trim($validated['first_name'] . ' ' . $validated['last_name']);
             $user->email = $validated['email'];
             $user->phone = $validated['phone'] ?? null;
             $user->type_company = $validated['type_company'] ?? null;
 
-            // ⚠️ если колонки нет — здесь будет SQL ошибка, и она уйдёт в catch
             if (array_key_exists('adres', $validated)) {
                 $user->adres = $validated['adres'];
             }
@@ -161,18 +177,25 @@ class ProfileController extends Controller
                 'message' => 'Персональні дані успішно збережені',
             ]);
 
-        } catch (\Throwable $e) {
-
-            // === В DEV возвращаем РЕАЛЬНУЮ ошибку ===
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'error'   => $e->getMessage(),
-                'file'    => $e->getFile(),
-                'line'    => $e->getLine(),
+                'error' => 'Validation failed',
+                'details' => $e->errors(),
+            ], 422);
+
+        } catch (\Throwable $e) {
+            Log::error('Profile update error', [
+                'user_id' => Auth::id(),
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Помилка збереження профілю',
             ], 500);
         }
     }
-
-
-
 }
