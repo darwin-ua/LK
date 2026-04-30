@@ -100,7 +100,7 @@ class RegisterController extends Controller
 
         $userFolder = public_path('files/' . $user->id);
         if (!file_exists($userFolder)) {
-            mkdir($userFolder, 0777, true);
+            mkdir($userFolder, 0755, true);
         }
 
         Mail::raw("Your login credentials:\n\nEmail: {$data['email']}\nPassword: {$data['password']}", function ($message) use ($data) {

@@ -37,43 +37,44 @@ use App\Http\Controllers\Cabinet\ProfileController;
 use App\Http\Controllers\OrderController;
 
 
-Route::get('/test', [TestController::class, 'getUsers']);
+//Route::get('/test', [TestController::class, 'getUsers']);
 
-Route::get('/redis-test', function () {
-    try {
-        Redis::set('test_key', 'Redis is working!');
-        $value = Redis::get('test_key');
-        return $value; // Должно вернуть 'Redis is working!'
-    } catch (\Exception $e) {
-        return 'Redis connection failed: ' . $e->getMessage();
-    }
-});
+//Route::get('/redis-test', function () {
+//    try {
+//        Redis::set('test_key', 'Redis is working!');
+//        $value = Redis::get('test_key');
+//        return $value; // Должно вернуть 'Redis is working!'
+//    } catch (\Exception $e) {
+//        return 'Redis connection failed: ' . $e->getMessage();
+//    }
+//});
 
-Route::get('/send-email', function () {
-    \Illuminate\Support\Facades\Mail::raw('This is a test email', function ($message) {
-        $message->to('itsystems571@gmail.com')
-            ->subject('Test Email from EVENTHES');
-    });
+//Route::get('/send-email', function () {
+//    \Illuminate\Support\Facades\Mail::raw('This is a test email', function ($message) {
+//        $message->to('itsystems571@gmail.com')
+//            ->subject('Test Email from EVENTHES');
+//    });
+//
+//    return 'Email sent successfully!';
+//});
 
-    return 'Email sent successfully!';
-});
-
-
-Route::post('/admin/export-products', [AdminOrderController::class, 'exportProductsToExcel'])->name('admin.exportProducts');
-
-Route::post('/admin/export-payments', [AdminPaymentController::class, 'exportPaymentsToExcel'])->name('admin.exportPayments');
 
 Route::get('login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('login', [LoginController::class, 'login']);
 
 
 Route::get('/lang/{locale}', function ($locale) {
+    if (!in_array($locale, ['uk', 'ru', 'en'], true)) {
+        abort(404);
+    }
+
     App::setLocale($locale);
     session()->put('locale', $locale);
+
     return redirect()->back();
 });
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -84,6 +85,10 @@ Route::middleware(['auth', 'update.cart'])->group(function () {
     Route::get('/restricted-access', function () {
         return view('restricted_access');
     })->name('restricted.access');
+
+    Route::post('/admin/export-products', [AdminOrderController::class, 'exportProductsToExcel'])->name('admin.exportProducts');
+
+    Route::post('/admin/export-payments', [AdminPaymentController::class, 'exportPaymentsToExcel'])->name('admin.exportPayments');
 
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.index');
     Route::get('/home', [HomeController::class, 'index'])->name('home');
@@ -248,7 +253,9 @@ Route::middleware(['auth', 'update.cart'])->group(function () {
 
 
     Route::get('/cabinet/complaints/{id}', function ($id) {
-        return \App\Models\Complaint::findOrFail($id);
+        return \App\Models\Complaint::where('id', $id)
+            ->where('user_id', auth()->id())
+            ->firstOrFail();
     })->middleware('auth');
 
     Route::get('/cabinet/notifications/orders', [
