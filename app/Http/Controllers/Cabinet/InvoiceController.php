@@ -130,10 +130,18 @@ class InvoiceController extends Controller
             // ======================================================
             // 6. Данные доступа к 1С
             // ======================================================
-            $urlCreateInvoice = 'http://185.112.41.230/prod/hs/lk/creatingInvoice';
+            $urlCreateInvoice = config('services.onec.create_invoice_url');
+            $login = config('services.onec.user');
+            $password = config('services.onec.password');
 
-            $login    = 'LK';
-            $password = 'ewq12345ASDF';
+            if (!$urlCreateInvoice || !$login || !$password) {
+                \Log::error('1C invoice config missing');
+
+                return response()->json([
+                    'status' => 500,
+                    'message' => 'Не налаштовано підключення до 1С',
+                ], 500);
+            }
 
             $authString = iconv('UTF-8', 'Windows-1251', $login . ':' . $password);
             $authHeader = 'Basic ' . base64_encode($authString);

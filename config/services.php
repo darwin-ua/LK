@@ -49,6 +49,12 @@ return [
         'password'    => env('ONE_C_PASSWORD'),
     ],
 
+    'onec' => [
+        'create_invoice_url' => env('ONEC_CREATE_INVOICE_URL'),
+        'user' => env('ONEC_USER'),
+        'password' => env('ONEC_PASSWORD'),
+    ],
+
 
 
 
