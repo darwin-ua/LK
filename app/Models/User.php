@@ -8,7 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Model;
-use TCG\Voyager\Traits\VoyagerUser; // <-- добавь это
+
 
 
 class User extends Authenticatable

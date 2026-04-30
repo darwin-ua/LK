@@ -20,4 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 
-Route::post('/users', [ApiUserController::class, 'store']);
+Route::middleware(['check.token', 'throttle:30,1'])
+    ->post('/users', [ApiUserController::class, 'store']);

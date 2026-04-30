@@ -113,10 +113,10 @@ Route::middleware(['auth', 'update.cart'])->group(function () {
     Route::get('/admin/summary', [AdminController::class, 'summaryData']);
     Route::get('/admin/get-ftp-image/{orderId}/{itemNumber}', [AdminController::class, 'getFtpImage']);
 
-    Route::get('/test-write', function () {
-        Storage::disk('public')->put('ftp_cache/test.txt', 'hello world');
-        return 'OK';
-    });
+//    Route::get('/test-write', function () {
+//        Storage::disk('public')->put('ftp_cache/test.txt', 'hello world');
+//        return 'OK';
+//    });
 
     Route::get('/admin/ftp-gallery/{orderId}', [AdminController::class, 'showFtpGalleryRaw']);
 
@@ -152,7 +152,7 @@ Route::middleware(['auth', 'update.cart'])->group(function () {
     Route::get('/admin/events/stats', [AdminEventController::class, 'statistic'])->name('admin.events.statistic');
     Route::get('/admin/events/settings', [AdminEventController::class, 'settings'])->name('admin.events.settings');
     Route::get('/admin/events/create', [AdminEventController::class, 'create'])->name('admin.events.create');
-    Route::post('/admin/events/st/{number}', [AdminEventController::class, 'searchTown'])->name('admin.events.searchTown')->withoutMiddleware(['auth']);
+    Route::post('/admin/events/st/{number}', [AdminEventController::class, 'searchTown'])->name('admin.events.searchTown');
     Route::get('/admin/events/lesson/{id}', [AdminEventController::class, 'lesson'])->name('admin.events.lesson');
     Route::post('/admin/events/sl', [AdminEventController::class, 'lessonSaveData'])->name('admin.events.lessonSaveData');
     Route::post('/admin/events', [AdminEventController::class, 'store'])->name('admin.events.store');
